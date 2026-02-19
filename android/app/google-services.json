@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "547432855128",
+    "project_id": "barksite-33a0d",
+    "storage_bucket": "barksite-33a0d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:547432855128:android:7f042d0dd0934754913c2d",
+        "android_client_info": {
+          "package_name": "com.example.barkbites_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxvNkuyczhHMByt-G-xR5TnjIm7BYXYfQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
