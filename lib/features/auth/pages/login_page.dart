@@ -37,12 +37,12 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.login(email, password);
+    if (!mounted) return;
     setState(() => _loading = false);
 
-    if (!mounted) return;
     if (success) {
       _showSnack('Welcome back');
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } else {
       _showSnack(authProvider.error ?? 'Login failed', isError: true);
     }
@@ -86,10 +86,18 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 14, offset: Offset(0, 6))
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 14,
+                        offset: Offset(0, 6),
+                      ),
                     ],
                   ),
-                  child: const Icon(LucideIcons.dog, color: Colors.white, size: 36),
+                  child: const Icon(
+                    LucideIcons.dog,
+                    color: Colors.white,
+                    size: 36,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const Text(
@@ -97,12 +105,18 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
-                const Text('Sign in to The Barksite', style: TextStyle(color: AppTheme.mutedText)),
+                const Text(
+                  'Sign in to The Barksite',
+                  style: TextStyle(color: AppTheme.mutedText),
+                ),
                 const SizedBox(height: 20),
                 Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
-                    side: BorderSide(color: AppTheme.primary.withOpacity(0.2), width: 2),
+                    side: BorderSide(
+                      color: AppTheme.primary.withOpacity(0.2),
+                      width: 2,
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -115,7 +129,9 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(hintText: 'you@example.com'),
+                            decoration: const InputDecoration(
+                              hintText: 'you@example.com',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -128,8 +144,14 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: InputDecoration(
                               hintText: 'Enter your password',
                               suffixIcon: IconButton(
-                                onPressed: () => setState(() => _showPassword = !_showPassword),
-                                icon: Icon(_showPassword ? LucideIcons.eyeOff : LucideIcons.eye),
+                                onPressed: () => setState(
+                                  () => _showPassword = !_showPassword,
+                                ),
+                                icon: Icon(
+                                  _showPassword
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                ),
                               ),
                             ),
                           ),
@@ -142,20 +164,31 @@ class _LoginPageState extends State<LoginPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             child: _loading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
                                       Icon(LucideIcons.logIn, size: 18),
                                       SizedBox(width: 8),
-                                      Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        'Sign In',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                           ),
@@ -168,10 +201,20 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account? ", style: TextStyle(color: AppTheme.mutedText)),
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: AppTheme.mutedText),
+                    ),
                     TextButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/signup'),
-                      child: const Text('Sign Up', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/signup'),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -185,7 +228,11 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({required this.label, required this.icon, required this.child});
+  const _LabeledField({
+    required this.label,
+    required this.icon,
+    required this.child,
+  });
 
   final String label;
   final IconData icon;
@@ -200,7 +247,10 @@ class _LabeledField extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: AppTheme.primary),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         const SizedBox(height: 6),

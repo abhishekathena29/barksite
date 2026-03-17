@@ -51,12 +51,12 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _loading = true);
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.signUp(name, email, password);
+    if (!mounted) return;
     setState(() => _loading = false);
 
-    if (!mounted) return;
     if (success) {
       _showSnack('Account created');
-      Navigator.pushReplacementNamed(context, '/profile');
+      Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
     } else {
       _showSnack(authProvider.error ?? 'Signup failed', isError: true);
     }
@@ -100,10 +100,18 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 14, offset: Offset(0, 6))
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 14,
+                        offset: Offset(0, 6),
+                      ),
                     ],
                   ),
-                  child: const Icon(LucideIcons.dog, color: Colors.white, size: 36),
+                  child: const Icon(
+                    LucideIcons.dog,
+                    color: Colors.white,
+                    size: 36,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const Text(
@@ -111,12 +119,18 @@ class _SignupPageState extends State<SignupPage> {
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
-                const Text('Create your account to get started', style: TextStyle(color: AppTheme.mutedText)),
+                const Text(
+                  'Create your account to get started',
+                  style: TextStyle(color: AppTheme.mutedText),
+                ),
                 const SizedBox(height: 20),
                 Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
-                    side: BorderSide(color: AppTheme.primary.withOpacity(0.2), width: 2),
+                    side: BorderSide(
+                      color: AppTheme.primary.withOpacity(0.2),
+                      width: 2,
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -128,7 +142,9 @@ class _SignupPageState extends State<SignupPage> {
                           icon: LucideIcons.user,
                           child: TextField(
                             controller: _nameController,
-                            decoration: const InputDecoration(hintText: 'John Doe'),
+                            decoration: const InputDecoration(
+                              hintText: 'John Doe',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -138,7 +154,9 @@ class _SignupPageState extends State<SignupPage> {
                           child: TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(hintText: 'you@example.com'),
+                            decoration: const InputDecoration(
+                              hintText: 'you@example.com',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -151,8 +169,14 @@ class _SignupPageState extends State<SignupPage> {
                             decoration: InputDecoration(
                               hintText: 'Min 6 characters',
                               suffixIcon: IconButton(
-                                onPressed: () => setState(() => _showPassword = !_showPassword),
-                                icon: Icon(_showPassword ? LucideIcons.eyeOff : LucideIcons.eye),
+                                onPressed: () => setState(
+                                  () => _showPassword = !_showPassword,
+                                ),
+                                icon: Icon(
+                                  _showPassword
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                ),
                               ),
                             ),
                           ),
@@ -164,7 +188,9 @@ class _SignupPageState extends State<SignupPage> {
                           child: TextField(
                             controller: _confirmController,
                             obscureText: !_showPassword,
-                            decoration: const InputDecoration(hintText: 'Re-enter password'),
+                            decoration: const InputDecoration(
+                              hintText: 'Re-enter password',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -175,20 +201,31 @@ class _SignupPageState extends State<SignupPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primary,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             child: _loading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
                                       Icon(LucideIcons.userPlus, size: 18),
                                       SizedBox(width: 8),
-                                      Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        'Create Account',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
                           ),
@@ -201,10 +238,20 @@ class _SignupPageState extends State<SignupPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Already have an account? ', style: TextStyle(color: AppTheme.mutedText)),
+                    const Text(
+                      'Already have an account? ',
+                      style: TextStyle(color: AppTheme.mutedText),
+                    ),
                     TextButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                      child: const Text('Sign In', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -218,7 +265,11 @@ class _SignupPageState extends State<SignupPage> {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({required this.label, required this.icon, required this.child});
+  const _LabeledField({
+    required this.label,
+    required this.icon,
+    required this.child,
+  });
 
   final String label;
   final IconData icon;
@@ -233,7 +284,10 @@ class _LabeledField extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: AppTheme.primary),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         const SizedBox(height: 6),

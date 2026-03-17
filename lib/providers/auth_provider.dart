@@ -7,11 +7,9 @@ import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 
 class AuthProvider extends ChangeNotifier {
-  AuthProvider({
-    fb_auth.FirebaseAuth? auth,
-    FirebaseFirestore? firestore,
-  })  : _auth = auth ?? fb_auth.FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance {
+  AuthProvider({fb_auth.FirebaseAuth? auth, FirebaseFirestore? firestore})
+    : _auth = auth ?? fb_auth.FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance {
     _authSub = _auth.authStateChanges().listen(_onAuthChanged);
   }
 
@@ -28,6 +26,30 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
 
   late final StreamSubscription<fb_auth.User?> _authSub;
+
+  User _buildUserFromFirebaseUser(fb_auth.User fbUser, {String? createdAt}) {
+    return User(
+      id: fbUser.uid,
+      name: fbUser.displayName ?? '',
+      email: fbUser.email ?? '',
+      createdAt: createdAt ?? DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<bool> _waitForCurrentUser(String uid) async {
+    const timeout = Duration(seconds: 10);
+    const pollInterval = Duration(milliseconds: 100);
+    final deadline = DateTime.now().add(timeout);
+
+    while (DateTime.now().isBefore(deadline)) {
+      if (!_loading && _currentUser?.id == uid) {
+        return true;
+      }
+      await Future<void>.delayed(pollInterval);
+    }
+
+    return !_loading && _currentUser?.id == uid;
+  }
 
   Future<void> _onAuthChanged(fb_auth.User? fbUser) async {
     _loading = true;
@@ -46,18 +68,13 @@ class AuthProvider extends ChangeNotifier {
       if (doc.exists) {
         _currentUser = User.fromJson(doc.data()!);
       } else {
-        final now = DateTime.now().toIso8601String();
-        final user = User(
-          id: fbUser.uid,
-          name: fbUser.displayName ?? '',
-          email: fbUser.email ?? '',
-          createdAt: now,
-        );
+        final user = _buildUserFromFirebaseUser(fbUser);
         await _firestore.collection('users').doc(fbUser.uid).set(user.toJson());
         _currentUser = user;
       }
     } catch (e) {
-      _error = 'Failed to load profile';
+      _currentUser = _buildUserFromFirebaseUser(fbUser);
+      _error = 'Signed in, but profile sync failed';
     }
 
     _loading = false;
@@ -75,18 +92,24 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       await cred.user?.updateDisplayName(name);
-      final now = DateTime.now().toIso8601String();
-      final user = User(
-        id: cred.user!.uid,
-        name: name,
-        email: email,
-        createdAt: now,
-      );
-      await _firestore.collection('users').doc(cred.user!.uid).set(user.toJson());
+      await cred.user?.reload();
+
+      final user = _buildUserFromFirebaseUser(_auth.currentUser ?? cred.user!);
+
+      try {
+        await _firestore
+            .collection('users')
+            .doc(cred.user!.uid)
+            .set(user.toJson());
+      } catch (_) {
+        _error = 'Account created, but profile sync failed';
+      }
+
       _currentUser = user;
       _loading = false;
       notifyListeners();
-      return true;
+
+      return await _waitForCurrentUser(cred.user!.uid);
     } on fb_auth.FirebaseAuthException catch (e) {
       _error = e.message ?? 'Signup failed';
     } catch (_) {
@@ -104,10 +127,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       _loading = false;
       notifyListeners();
-      return true;
+
+      final isReady = await _waitForCurrentUser(cred.user!.uid);
+      if (!isReady) {
+        _error = 'Login succeeded, but profile loading timed out';
+        notifyListeners();
+      }
+      return isReady;
     } on fb_auth.FirebaseAuthException catch (e) {
       _error = e.message ?? 'Login failed';
     } catch (_) {
@@ -121,6 +153,63 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     await _auth.signOut();
+  }
+
+  Future<bool> updateProfile({
+    required String name,
+    required String city,
+    required String bio,
+  }) async {
+    final user = _auth.currentUser;
+    final currentUser = _currentUser;
+    if (user == null || currentUser == null) return false;
+
+    final updatedUser = currentUser.copyWith(
+      name: name,
+      city: city,
+      bio: bio,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+
+    try {
+      await user.updateDisplayName(name);
+      await _firestore.collection('users').doc(user.uid).set(
+            updatedUser.toJson(),
+            SetOptions(merge: true),
+          );
+      _currentUser = updatedUser;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _error = 'Failed to update profile';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> updateSelectedDog(String? dogId) async {
+    final user = _currentUser;
+    if (user == null || user.selectedDogId == dogId) return;
+
+    _currentUser = user.copyWith(
+      selectedDogId: dogId,
+      clearSelectedDogId: dogId == null,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+    notifyListeners();
+
+    try {
+      await _firestore.collection('users').doc(user.id).set(
+            {
+              'selectedDogId': dogId,
+              'updatedAt': DateTime.now().toIso8601String(),
+            },
+            SetOptions(merge: true),
+          );
+    } catch (_) {
+      _error = 'Failed to save selected dog';
+      notifyListeners();
+    }
   }
 
   @override
