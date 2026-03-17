@@ -32,10 +32,13 @@ class BarkBitesApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (context) => DogProvider(context.read<AuthProvider>())),
+        ChangeNotifierProvider(
+          create: (context) => DogProvider(context.read<AuthProvider>()),
+        ),
       ],
       child: MaterialApp(
         title: 'The Barksite',
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme(),
         initialRoute: '/',
         routes: {
