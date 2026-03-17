@@ -62,20 +62,20 @@ class DogProfile {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'breed': breed,
-        'age': age,
-        'weight': weight,
-        'activityLevel': activityLevel,
-        'healthConditions': healthConditions,
-        'gender': gender,
-        'birthday': birthday,
-        'allergies': allergies,
-        'foodPreference': foodPreference,
-        'notes': notes,
-        'createdAt': createdAt,
-      };
+    'id': id,
+    'name': name,
+    'breed': breed,
+    'age': age,
+    'weight': weight,
+    'activityLevel': activityLevel,
+    'healthConditions': healthConditions,
+    'gender': gender,
+    'birthday': birthday,
+    'allergies': allergies,
+    'foodPreference': foodPreference,
+    'notes': notes,
+    'createdAt': createdAt,
+  };
 
   factory DogProfile.fromJson(Map<String, dynamic> json) {
     return DogProfile(

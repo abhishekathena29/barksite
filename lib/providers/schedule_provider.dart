@@ -8,8 +8,11 @@ import 'auth_provider.dart';
 import 'dog_provider.dart';
 
 class ScheduleProvider extends ChangeNotifier {
-  ScheduleProvider(this._authProvider, this._dogProvider, {FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance {
+  ScheduleProvider(
+    this._authProvider,
+    this._dogProvider, {
+    FirebaseFirestore? firestore,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance {
     _authProvider.addListener(_onDependenciesChanged);
     _dogProvider.addListener(_onDependenciesChanged);
     _onDependenciesChanged();
@@ -65,7 +68,9 @@ class ScheduleProvider extends ChangeNotifier {
         .snapshots()
         .listen(
           (snapshot) {
-            _items = snapshot.docs.map((doc) => ScheduleItem.fromJson(doc.data())).toList();
+            _items = snapshot.docs
+                .map((doc) => ScheduleItem.fromJson(doc.data()))
+                .toList();
             _loading = false;
             notifyListeners();
           },
@@ -88,8 +93,11 @@ class ScheduleProvider extends ChangeNotifier {
 
   List<ScheduleItem> upcomingItems({int limit = 3}) {
     final now = DateTime.now();
-    final upcoming = _items.where((item) => !item.isCompleted && item.startsAt.isAfter(now)).toList()
-      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    final upcoming =
+        _items
+            .where((item) => !item.isCompleted && item.startsAt.isAfter(now))
+            .toList()
+          ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
     return upcoming.take(limit).toList();
   }
 

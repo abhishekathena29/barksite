@@ -6,16 +6,18 @@ import 'package:provider/provider.dart';
 import 'features/auth/pages/intro_page.dart';
 import 'features/auth/pages/login_page.dart';
 import 'features/auth/pages/signup_page.dart';
-import 'features/home/pages/home_page.dart';
-import 'features/profile/pages/dog_profile_page.dart';
-import 'features/diet/pages/diet_plans_page.dart';
-import 'features/food/pages/food_brands_page.dart';
-import 'features/food/pages/brand_stores_page.dart';
-import 'features/map/pages/map_page.dart';
 import 'features/calendar/pages/calendar_page.dart';
+import 'features/diet/pages/diet_plans_page.dart';
+import 'features/home/pages/home_page.dart';
+import 'features/food/pages/brand_stores_page.dart';
+import 'features/food/pages/food_brands_page.dart';
+import 'features/map/pages/map_page.dart';
 import 'features/misc/pages/not_found_page.dart';
+import 'features/profile/pages/account_page.dart';
+import 'features/profile/pages/dog_profile_page.dart';
 import 'providers/auth_provider.dart';
 import 'providers/dog_provider.dart';
+import 'providers/schedule_provider.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -43,6 +45,12 @@ class BarkBitesApp extends StatelessWidget {
           create: (context) => DogProvider(context.read<AuthProvider>()),
           update: (context, authProvider, previous) =>
               previous ?? DogProvider(authProvider),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ScheduleProvider(
+            context.read<AuthProvider>(),
+            context.read<DogProvider>(),
+          ),
         ),
       ],
       child: MaterialApp(
@@ -81,6 +89,11 @@ class BarkBitesApp extends StatelessWidget {
               return _buildRoute(
                 settings: settings,
                 child: const _ProtectedPage(child: DietPlansPage()),
+              );
+            case '/account':
+              return _buildRoute(
+                settings: settings,
+                child: const _ProtectedPage(child: AccountPage()),
               );
             case '/food-brands':
               return _buildRoute(

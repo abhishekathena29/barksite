@@ -19,6 +19,7 @@ class AppLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final routeName = ModalRoute.of(context)?.settings.name ?? '';
     return Scaffold(
+      extendBody: true,
       appBar: title == null
           ? null
           : AppBar(
@@ -26,16 +27,21 @@ class AppLayout extends StatelessWidget {
                 title!,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              backgroundColor: AppTheme.background,
+              backgroundColor: Colors.transparent,
               surfaceTintColor: Colors.transparent,
             ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: child,
+        child: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: child,
+          ),
         ),
       ),
-      bottomNavigationBar: showBottomNav ? BottomNav(currentRoute: routeName) : null,
+      bottomNavigationBar: showBottomNav
+          ? BottomNav(currentRoute: routeName)
+          : null,
     );
   }
 }

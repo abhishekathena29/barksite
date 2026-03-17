@@ -173,10 +173,10 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await user.updateDisplayName(name);
-      await _firestore.collection('users').doc(user.uid).set(
-            updatedUser.toJson(),
-            SetOptions(merge: true),
-          );
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(updatedUser.toJson(), SetOptions(merge: true));
       _currentUser = updatedUser;
       notifyListeners();
       return true;
@@ -199,13 +199,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _firestore.collection('users').doc(user.id).set(
-            {
-              'selectedDogId': dogId,
-              'updatedAt': DateTime.now().toIso8601String(),
-            },
-            SetOptions(merge: true),
-          );
+      await _firestore.collection('users').doc(user.id).set({
+        'selectedDogId': dogId,
+        'updatedAt': DateTime.now().toIso8601String(),
+      }, SetOptions(merge: true));
     } catch (_) {
       _error = 'Failed to save selected dog';
       notifyListeners();

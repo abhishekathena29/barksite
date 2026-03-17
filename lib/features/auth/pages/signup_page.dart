@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../theme.dart';
+import '../widgets/auth_shell.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -73,226 +74,107 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFCE6D2), AppTheme.background],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 16),
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primary, AppTheme.accent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 14,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    LucideIcons.dog,
-                    color: Colors.white,
-                    size: 36,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Join The Barksite',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Create your account to get started',
-                  style: TextStyle(color: AppTheme.mutedText),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    side: BorderSide(
-                      color: AppTheme.primary.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _LabeledField(
-                          label: 'Full Name',
-                          icon: LucideIcons.user,
-                          child: TextField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              hintText: 'John Doe',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _LabeledField(
-                          label: 'Email',
-                          icon: LucideIcons.mail,
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              hintText: 'you@example.com',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _LabeledField(
-                          label: 'Password',
-                          icon: LucideIcons.lock,
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: !_showPassword,
-                            decoration: InputDecoration(
-                              hintText: 'Min 6 characters',
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(
-                                  () => _showPassword = !_showPassword,
-                                ),
-                                icon: Icon(
-                                  _showPassword
-                                      ? LucideIcons.eyeOff
-                                      : LucideIcons.eye,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _LabeledField(
-                          label: 'Confirm Password',
-                          icon: LucideIcons.lock,
-                          child: TextField(
-                            controller: _confirmController,
-                            obscureText: !_showPassword,
-                            decoration: const InputDecoration(
-                              hintText: 'Re-enter password',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _handleSignup,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(LucideIcons.userPlus, size: 18),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Create Account',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Already have an account? ',
-                      style: TextStyle(color: AppTheme.mutedText),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/login'),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: AppTheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return AuthShell(
+      hero: const AuthHero(
+        badge: 'Create account',
+        headline: 'Set up a calmer routine for every dog',
+        description:
+            'Start with your account, then add dog profiles, switch between them, and keep every schedule organized from day one.',
+        metrics: ['Quick setup', 'Multiple dogs', 'Personal planning'],
+      ),
+      title: 'Create account',
+      subtitle: 'A cleaner start for dog profiles, schedules, and daily care.',
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AuthField(
+            label: 'Full name',
+            icon: LucideIcons.user,
+            child: TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(hintText: 'John Doe'),
             ),
           ),
+          const SizedBox(height: 16),
+          AuthField(
+            label: 'Email',
+            icon: LucideIcons.mail,
+            child: TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(hintText: 'you@example.com'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AuthField(
+            label: 'Password',
+            icon: LucideIcons.lock,
+            child: TextField(
+              controller: _passwordController,
+              obscureText: !_showPassword,
+              decoration: InputDecoration(
+                hintText: 'At least 6 characters',
+                suffixIcon: IconButton(
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
+                  icon: Icon(
+                    _showPassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AuthField(
+            label: 'Confirm password',
+            icon: LucideIcons.lock,
+            child: TextField(
+              controller: _confirmController,
+              obscureText: !_showPassword,
+              decoration: const InputDecoration(hintText: 'Re-enter password'),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: _loading ? null : _handleSignup,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(LucideIcons.userPlus),
+              label: Text(
+                _loading ? 'Creating account...' : 'Create account',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      topAction: TextButton(
+        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+        child: const Text('Sign In'),
+      ),
+      bottomText: const Text(
+        'Already have an account? ',
+        style: TextStyle(color: AppTheme.mutedText),
+      ),
+      bottomAction: TextButton(
+        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+        child: const Text(
+          'Log in',
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
-    );
-  }
-}
-
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.icon,
-    required this.child,
-  });
-
-  final String label;
-  final IconData icon;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: AppTheme.primary),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        child,
-      ],
     );
   }
 }

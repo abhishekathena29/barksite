@@ -48,7 +48,10 @@ class DogProvider extends ChangeNotifier {
 
     if (_activeUserId == userId) {
       if (user != null && user.selectedDogId != _selectedDogId) {
-        _syncSelectedDog(preferredDogId: user.selectedDogId, persistSelection: false);
+        _syncSelectedDog(
+          preferredDogId: user.selectedDogId,
+          persistSelection: false,
+        );
       }
       return;
     }
@@ -77,9 +80,14 @@ class DogProvider extends ChangeNotifier {
         .snapshots()
         .listen(
           (snapshot) {
-            _dogs = snapshot.docs.map((doc) => DogProfile.fromJson(doc.data())).toList();
+            _dogs = snapshot.docs
+                .map((doc) => DogProfile.fromJson(doc.data()))
+                .toList();
             _loading = false;
-            _syncSelectedDog(preferredDogId: user.selectedDogId, persistSelection: true);
+            _syncSelectedDog(
+              preferredDogId: user.selectedDogId,
+              persistSelection: true,
+            );
           },
           onError: (_) {
             _error = 'Failed to load dogs';
@@ -95,7 +103,8 @@ class DogProvider extends ChangeNotifier {
   }) {
     String? nextSelectedDogId;
 
-    if (preferredDogId != null && _dogs.any((dog) => dog.id == preferredDogId)) {
+    if (preferredDogId != null &&
+        _dogs.any((dog) => dog.id == preferredDogId)) {
       nextSelectedDogId = preferredDogId;
     } else if (_dogs.isNotEmpty) {
       nextSelectedDogId = _dogs.first.id;
@@ -126,13 +135,24 @@ class DogProvider extends ChangeNotifier {
     }
 
     try {
-      final doc = _firestore.collection('users').doc(user.id).collection('dogs').doc();
+      final doc = _firestore
+          .collection('users')
+          .doc(user.id)
+          .collection('dogs')
+          .doc();
       final newDog = dog.copyWith(
         id: doc.id,
         createdAt: DateTime.now().toIso8601String(),
       );
       await doc.set(newDog.toJson());
-      await selectDog(newDog.id);
+
+      _dogs = [..._dogs, newDog]
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      _selectedDogId = newDog.id;
+      _error = null;
+      notifyListeners();
+
+      await _authProvider.updateSelectedDog(newDog.id);
       return newDog;
     } catch (_) {
       _error = 'Failed to add dog';
@@ -168,7 +188,12 @@ class DogProvider extends ChangeNotifier {
     final user = _authProvider.currentUser;
     if (user == null) return;
     try {
-      await _firestore.collection('users').doc(user.id).collection('dogs').doc(dogId).delete();
+      await _firestore
+          .collection('users')
+          .doc(user.id)
+          .collection('dogs')
+          .doc(dogId)
+          .delete();
       if (_selectedDogId == dogId) {
         await _authProvider.updateSelectedDog(null);
       }

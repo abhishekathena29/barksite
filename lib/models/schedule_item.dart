@@ -44,22 +44,23 @@ class ScheduleItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'type': type,
-        'dateTime': dateTime,
-        'notes': notes,
-        'durationMinutes': durationMinutes,
-        'isCompleted': isCompleted,
-        'createdAt': createdAt,
-      };
+    'id': id,
+    'title': title,
+    'type': type,
+    'dateTime': dateTime,
+    'notes': notes,
+    'durationMinutes': durationMinutes,
+    'isCompleted': isCompleted,
+    'createdAt': createdAt,
+  };
 
   factory ScheduleItem.fromJson(Map<String, dynamic> json) {
     return ScheduleItem(
       id: json['id'] as String,
       title: (json['title'] ?? '') as String,
       type: (json['type'] ?? 'meal') as String,
-      dateTime: (json['dateTime'] ?? DateTime.now().toIso8601String()) as String,
+      dateTime:
+          (json['dateTime'] ?? DateTime.now().toIso8601String()) as String,
       notes: (json['notes'] ?? '') as String,
       durationMinutes: (json['durationMinutes'] ?? 30) as int,
       isCompleted: (json['isCompleted'] ?? false) as bool,
