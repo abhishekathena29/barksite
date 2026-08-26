@@ -160,6 +160,11 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final matchingSelectedDogs = dogs
+        .where((dog) => dog.id == selectedDog?.id)
+        .length;
+    final dropdownValue = matchingSelectedDogs == 1 ? selectedDog?.id : null;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -245,7 +250,7 @@ class _HeroCard extends StatelessWidget {
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: selectedDog?.id,
+                  value: dropdownValue,
                   dropdownColor: AppTheme.foreground,
                   iconEnabledColor: Colors.white,
                   style: const TextStyle(color: Colors.white),

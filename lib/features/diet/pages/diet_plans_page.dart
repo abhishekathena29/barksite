@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
-import '../../../providers/auth_provider.dart';
+import '../../../models/dog_profile.dart';
 import '../../../providers/dog_provider.dart';
+import '../../../services/gemini_service.dart';
 import '../../../theme.dart';
 import '../../../widgets/app_layout.dart';
 
@@ -15,177 +16,317 @@ class DietPlansPage extends StatefulWidget {
 }
 
 class _DietPlansPageState extends State<DietPlansPage> {
+  Future<List<_DietPlan>>? _plansFuture;
+  String? _loadedForDogId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dog = context.read<DogProvider>().selectedDog;
+    if (dog != null && dog.id != _loadedForDogId) {
+      _loadedForDogId = dog.id;
+      _plansFuture = _fetchPlans(dog);
+    }
+  }
+
+  Future<List<_DietPlan>> _fetchPlans(DogProfile dog) async {
+    final raw = await GeminiService.generateDietPlans(
+      dogName: dog.name,
+      breed: dog.breed,
+      age: dog.age,
+      weight: dog.weight,
+      activityLevel: dog.activityLevel,
+      healthConditions: dog.healthConditions,
+      allergies: dog.allergies,
+      foodPreference: dog.foodPreference,
+      notes: dog.notes,
+    );
+    return raw.asMap().entries.map((e) => _parsePlan(e.value, e.key)).toList();
+  }
+
+  static _DietPlan _parsePlan(Map<String, dynamic> m, int index) {
+    final colors = [
+      const Color(0xFFEF4444),
+      const Color(0xFFF97316),
+      const Color(0xFF8B5CF6),
+      const Color(0xFF22C55E),
+      const Color(0xFF10B981),
+      const Color(0xFFEC4899),
+      const Color(0xFF14B8A6),
+      const Color(0xFFDC2626),
+    ];
+    final icons = [
+      LucideIcons.heart,
+      LucideIcons.dumbbell,
+      LucideIcons.brain,
+      LucideIcons.scale,
+      LucideIcons.leaf,
+      LucideIcons.baby,
+      LucideIcons.activity,
+      LucideIcons.flame,
+    ];
+
+    final scheduleRaw = m['schedule'] as Map<String, dynamic>? ?? {};
+    final schedule = scheduleRaw.map((k, v) => MapEntry(k, v.toString()));
+
+    return _DietPlan(
+      id: m['id']?.toString() ?? 'plan_$index',
+      name: m['name']?.toString() ?? 'Diet Plan ${index + 1}',
+      icon: icons[index % icons.length],
+      color: colors[index % colors.length],
+      description: m['description']?.toString() ?? '',
+      calories: (m['calories'] as num?)?.toInt() ?? 1200,
+      protein: m['protein']?.toString() ?? '25-30%',
+      meals: (m['meals'] as num?)?.toInt() ?? 2,
+      recommended: m['recommended'] == true,
+      features: List<String>.from(m['features'] as List? ?? []),
+      mealInclusions: _MealInclusions(
+        proteins: List<String>.from(m['proteins'] as List? ?? []),
+        carbs: List<String>.from(m['carbs'] as List? ?? []),
+        supplements: List<String>.from(m['supplements'] as List? ?? []),
+      ),
+      schedule: schedule,
+    );
+  }
+
+  void _retry(DogProfile dog) {
+    setState(() {
+      _loadedForDogId = null;
+      _plansFuture = null;
+    });
+    _loadedForDogId = dog.id;
+    setState(() {
+      _plansFuture = _fetchPlans(dog);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
     final dogProvider = context.watch<DogProvider>();
-
-    if (authProvider.loading || dogProvider.loading) {
-      return AppLayout(child: const Center(child: CircularProgressIndicator()));
-    }
-
     final dogProfile = dogProvider.selectedDog;
-    final weight = int.tryParse(dogProfile?.weight ?? '50') ?? 50;
-    final age = int.tryParse(dogProfile?.age ?? '3') ?? 3;
-    final activityLevel = dogProfile?.activityLevel ?? 'moderate';
 
-    double base = weight * 30;
-    switch (activityLevel) {
-      case 'low':
-        base *= 1.2;
-        break;
-      case 'moderate':
-        base *= 1.6;
-        break;
-      case 'high':
-        base *= 2.0;
-        break;
-      case 'very-high':
-        base *= 2.4;
-        break;
+    if (dogProfile == null) {
+      return AppLayout(
+        title: 'Diet Plans',
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Please add a dog profile first to see personalized diet plans.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.mutedText, fontSize: 15),
+            ),
+          ),
+        ),
+      );
     }
-    if (age < 1) base *= 1.5;
-    if (age > 7) base *= 0.9;
-
-    final plans = _buildPlans(base, activityLevel, age, weight);
 
     return AppLayout(
       title: 'Diet Plans',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (dogProfile != null)
-            Card(
-              color: AppTheme.primary.withValues(alpha: 0.2),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'Showing plans for ${dogProfile.name} • ${dogProfile.weight} lbs • $activityLevel activity',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12),
-                ),
+          Card(
+            color: AppTheme.primary.withValues(alpha: 0.2),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.sparkles, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'AI-generated plans for ${dogProfile.name} • ${dogProfile.weight} kg • ${dogProfile.activityLevel} activity',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
           const SizedBox(height: 10),
           Expanded(
-            child: ListView.separated(
-              itemCount: plans.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final plan = plans[index];
-                return GestureDetector(
-                  onTap: () => _openPlanSheet(plan),
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: plan.recommended
-                            ? AppTheme.primary
-                            : AppTheme.border,
-                        width: plan.recommended ? 2 : 1,
+            child: FutureBuilder<List<_DietPlan>>(
+              future: _plansFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Generating personalized Indian diet plans...',
+                        style: TextStyle(color: AppTheme.mutedText),
                       ),
-                    ),
+                    ],
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: plan.color,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              plan.icon,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        plan.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    if (plan.recommended)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primary,
-                                          borderRadius: BorderRadius.circular(
-                                            999,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'Recommended',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  plan.description,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.mutedText,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Text(
-                                      '${plan.calories} cal/day',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.mutedText,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      '•',
-                                      style: TextStyle(
-                                        color: AppTheme.mutedText,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${plan.protein} protein',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.mutedText,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
                           const Icon(
-                            LucideIcons.chevronRight,
-                            size: 18,
-                            color: AppTheme.mutedText,
+                            LucideIcons.alertCircle,
+                            color: AppTheme.destructive,
+                            size: 40,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Failed to generate diet plans',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            snapshot.error.toString(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.mutedText,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => _retry(dogProfile),
+                            icon: const Icon(LucideIcons.refreshCw, size: 16),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: Colors.white,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  );
+                }
+
+                final plans = snapshot.data ?? [];
+
+                return ListView.separated(
+                  itemCount: plans.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final plan = plans[index];
+                    return GestureDetector(
+                      onTap: () => _openPlanSheet(plan),
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: plan.recommended
+                                ? AppTheme.primary
+                                : AppTheme.border,
+                            width: plan.recommended ? 2 : 1,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: plan.color,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  plan.icon,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            plan.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        if (plan.recommended)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.primary,
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: const Text(
+                                              'Recommended',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      plan.description,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.mutedText,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${plan.calories} cal/day',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.mutedText,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          '•',
+                                          style: TextStyle(
+                                            color: AppTheme.mutedText,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${plan.protein} protein',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.mutedText,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                LucideIcons.chevronRight,
+                                size: 18,
+                                color: AppTheme.mutedText,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -228,11 +369,13 @@ class _DietPlansPageState extends State<DietPlansPage> {
                         child: Icon(plan.icon, color: Colors.white, size: 20),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        plan.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Text(
+                          plan.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -339,53 +482,7 @@ class _DietPlansPageState extends State<DietPlansPage> {
                         )
                         .toList(),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Recommended Brands',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: plan.brands
-                        .map(
-                          (brand) => Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.muted,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              brand,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/food-brands');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'View Food Brands',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             );
@@ -500,7 +597,6 @@ class _DietPlan {
     required this.meals,
     required this.features,
     required this.mealInclusions,
-    required this.brands,
     required this.schedule,
     this.recommended = false,
   });
@@ -515,333 +611,6 @@ class _DietPlan {
   final int meals;
   final List<String> features;
   final _MealInclusions mealInclusions;
-  final List<String> brands;
   final Map<String, String> schedule;
   final bool recommended;
-}
-
-List<_DietPlan> _buildPlans(
-  double base,
-  String activityLevel,
-  int age,
-  int weight,
-) {
-  return [
-    _DietPlan(
-      id: 'balanced',
-      name: 'Balanced Nutrition',
-      icon: LucideIcons.heart,
-      color: const Color(0xFFEF4444),
-      description: 'Well-rounded diet for optimal health',
-      calories: base.round(),
-      protein: '25-30%',
-      meals: 2,
-      recommended: activityLevel == 'moderate',
-      features: [
-        'High-quality proteins',
-        'Omega fatty acids',
-        'Essential vitamins',
-        'Prebiotic fiber',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Chicken 18%', 'Turkey 14%', 'Fish 8%'],
-        carbs: ['Brown rice', 'Sweet potato', 'Oats'],
-        supplements: ['Multivitamin', 'Calcium', 'Probiotics'],
-      ),
-      brands: [
-        'Royal Canin (\$65-75)',
-        'Hill\'s Science (\$55-65)',
-        'Wellness Core (\$60-70)',
-      ],
-      schedule: {
-        'morning': '7:00-8:00 AM (50%)',
-        'evening': '6:00-7:00 PM (50%)',
-      },
-    ),
-    _DietPlan(
-      id: 'high-protein',
-      name: 'High-Protein Active',
-      icon: LucideIcons.dumbbell,
-      color: const Color(0xFFF97316),
-      description: 'For active dogs needing extra protein',
-      calories: (base * 1.1).round(),
-      protein: '32-38%',
-      meals: 3,
-      recommended: activityLevel == 'high' || activityLevel == 'very-high',
-      features: [
-        'Premium animal protein',
-        'Muscle recovery',
-        'Joint support',
-        'Added electrolytes',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Salmon 22%', 'Turkey 18%', 'Beef 12%'],
-        carbs: ['Sweet potato', 'Brown rice', 'Chickpeas'],
-        supplements: ['Glucosamine', 'B-vitamins', 'Creatine'],
-      ),
-      brands: [
-        'Orijen (\$85-95)',
-        'Merrick Backcountry (\$70-80)',
-        'Acana Sport (\$75-85)',
-      ],
-      schedule: {
-        'morning': '6:30-7:30 AM (35%)',
-        'midday': '12:00-1:00 PM (30%)',
-        'evening': '6:00-7:00 PM (35%)',
-      },
-    ),
-    _DietPlan(
-      id: 'senior',
-      name: 'Senior Care',
-      icon: LucideIcons.brain,
-      color: const Color(0xFF8B5CF6),
-      description: 'Gentle nutrition for older dogs',
-      calories: (base * 0.9).round(),
-      protein: '22-26%',
-      meals: 2,
-      recommended: age > 7,
-      features: [
-        'Easy to digest',
-        'Joint support',
-        'Cognitive health',
-        'Lower phosphorus',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['White fish 16%', 'Chicken 14%', 'Turkey 10%'],
-        carbs: ['White rice', 'Oatmeal', 'Pumpkin'],
-        supplements: ['Glucosamine', 'Omega-3', 'Antioxidants'],
-      ),
-      brands: [
-        "Hill's Senior 7+ (\$58-68)",
-        'Royal Canin Aging (\$62-72)',
-        'Wellness Senior (\$55-65)',
-      ],
-      schedule: {
-        'morning': '7:30-8:30 AM (50%)',
-        'evening': '5:30-6:30 PM (50%)',
-      },
-    ),
-    _DietPlan(
-      id: 'weight-management',
-      name: 'Weight Management',
-      icon: LucideIcons.scale,
-      color: const Color(0xFF22C55E),
-      description: 'Low-calorie for healthy weight loss',
-      calories: (base * 0.8).round(),
-      protein: '28-32%',
-      meals: 3,
-      recommended: weight > 80,
-      features: [
-        'High fiber satiety',
-        'L-carnitine',
-        'Low glycemic',
-        'Lean proteins',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Chicken breast 20%', 'White fish 16%', 'Turkey 12%'],
-        carbs: ['Brown rice', 'Steel-cut oats', 'Lentils'],
-        supplements: ['L-carnitine', 'Fiber', 'Green tea extract'],
-      ),
-      brands: [
-        'Hill\'s w/d (\$68-78)',
-        'Royal Canin Weight (\$65-75)',
-        'Purina Pro Weight (\$48-55)',
-      ],
-      schedule: {
-        'morning': '7:00 AM (30%)',
-        'midday': '12:00 PM (35%)',
-        'evening': '6:00 PM (35%)',
-      },
-    ),
-    _DietPlan(
-      id: 'grain-free',
-      name: 'Grain-Free',
-      icon: LucideIcons.leaf,
-      color: const Color(0xFF10B981),
-      description: 'For dogs with grain sensitivities',
-      calories: base.round(),
-      protein: '30-35%',
-      meals: 2,
-      features: [
-        'No grains',
-        'Novel proteins',
-        'Limited ingredients',
-        'Gut health',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Duck 20%', 'Venison 15%', 'Rabbit 10%'],
-        carbs: ['Sweet potato', 'Tapioca', 'Chickpeas'],
-        supplements: ['Probiotics', 'Digestive enzymes', 'Omega-3'],
-      ),
-      brands: [
-        'Taste of the Wild (\$50-60)',
-        'Blue Buffalo Wilderness (\$55-65)',
-        'Merrick Grain Free (\$58-68)',
-      ],
-      schedule: {
-        'morning': '7:00-8:00 AM (50%)',
-        'evening': '6:00-7:00 PM (50%)',
-      },
-    ),
-    _DietPlan(
-      id: 'puppy',
-      name: 'Puppy Growth',
-      icon: LucideIcons.baby,
-      color: const Color(0xFFEC4899),
-      description: 'Complete nutrition for growing puppies',
-      calories: (base * 1.5).round(),
-      protein: '28-32%',
-      meals: 4,
-      recommended: age < 1,
-      features: [
-        'DHA brain development',
-        'Calcium for bones',
-        'Immune support',
-        'Digestible proteins',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Chicken 22%', 'Egg 8%', 'Fish meal 6%'],
-        carbs: ['Rice', 'Oatmeal', 'Barley'],
-        supplements: ['DHA', 'Calcium', 'Colostrum'],
-      ),
-      brands: [
-        'Royal Canin Puppy (\$60-70)',
-        "Hill's Puppy (\$55-65)",
-        'Wellness Puppy (\$58-68)',
-      ],
-      schedule: {
-        'morning': '7:00 AM (25%)',
-        'midday': '12:00 PM (25%)',
-        'afternoon': '4:00 PM (25%)',
-        'evening': '7:00 PM (25%)',
-      },
-    ),
-    _DietPlan(
-      id: 'sensitive-stomach',
-      name: 'Sensitive Stomach',
-      icon: LucideIcons.activity,
-      color: const Color(0xFF14B8A6),
-      description: 'Easy digestion for sensitive dogs',
-      calories: (base * 0.95).round(),
-      protein: '22-26%',
-      meals: 3,
-      features: [
-        'Highly digestible',
-        'Limited ingredients',
-        'Prebiotics',
-        'Gentle proteins',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Lamb 18%', 'White fish 12%', 'Turkey 10%'],
-        carbs: ['White rice', 'Pumpkin', 'Sweet potato'],
-        supplements: ['Probiotics', 'Fiber', 'Ginger'],
-      ),
-      brands: [
-        "Hill's Sensitive (\$62-72)",
-        'Royal Canin Digestive (\$65-75)',
-        'Purina Pro Sensitive (\$48-55)',
-      ],
-      schedule: {
-        'morning': '7:30 AM (30%)',
-        'midday': '1:00 PM (35%)',
-        'evening': '6:30 PM (35%)',
-      },
-    ),
-    _DietPlan(
-      id: 'performance',
-      name: 'Performance Plus',
-      icon: LucideIcons.flame,
-      color: const Color(0xFFDC2626),
-      description: 'Maximum energy for working dogs',
-      calories: (base * 1.3).round(),
-      protein: '35-40%',
-      meals: 3,
-      features: [
-        'Energy dense',
-        'Quick absorption',
-        'Endurance support',
-        'Recovery formula',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Beef 25%', 'Chicken 18%', 'Fish 10%'],
-        carbs: ['Oats', 'Barley', 'Sweet potato'],
-        supplements: ['Electrolytes', 'MCT oil', 'Iron'],
-      ),
-      brands: [
-        'Eukanuba Premium (\$70-80)',
-        'Pro Plan Sport (\$55-65)',
-        'Victor Performance (\$50-58)',
-      ],
-      schedule: {
-        'morning': '6:00 AM (35%)',
-        'midday': '12:00 PM (30%)',
-        'evening': '7:00 PM (35%)',
-      },
-    ),
-    _DietPlan(
-      id: 'raw-inspired',
-      name: 'Raw-Inspired',
-      icon: LucideIcons.fish,
-      color: const Color(0xFF06B6D4),
-      description: 'Mimics ancestral raw diet',
-      calories: (base * 1.05).round(),
-      protein: '38-42%',
-      meals: 2,
-      features: [
-        'Freeze-dried raw',
-        'Whole prey model',
-        'Minimal processing',
-        'Natural enzymes',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Freeze-dried beef 30%', 'Organ meats 10%', 'Bone meal 5%'],
-        carbs: ['Minimal vegetables', 'Berries', 'Leafy greens'],
-        supplements: ['Organ blend', 'Kelp', 'Bone broth'],
-      ),
-      brands: [
-        "Stella & Chewy's (\$75-90)",
-        'Primal (\$70-85)',
-        'Instinct Raw (\$65-80)',
-      ],
-      schedule: {
-        'morning': '7:00-8:00 AM (50%)',
-        'evening': '6:00-7:00 PM (50%)',
-      },
-    ),
-    _DietPlan(
-      id: 'joint-health',
-      name: 'Joint and Mobility',
-      icon: LucideIcons.bone,
-      color: const Color(0xFFF59E0B),
-      description: 'Support for joints and mobility',
-      calories: (base * 0.95).round(),
-      protein: '26-30%',
-      meals: 2,
-      features: [
-        'Glucosamine rich',
-        'Chondroitin',
-        'Anti-inflammatory',
-        'Omega-3 EPA/DHA',
-      ],
-      mealInclusions: _MealInclusions(
-        proteins: ['Salmon 20%', 'Chicken 15%', 'Mussels 5%'],
-        carbs: ['Brown rice', 'Sweet potato', 'Quinoa'],
-        supplements: [
-          'Glucosamine 1200mg',
-          'Chondroitin 800mg',
-          'MSM',
-          'Turmeric',
-        ],
-      ),
-      brands: [
-        "Hill's Joint Care (\$65-75)",
-        'Royal Canin Mobility (\$68-78)',
-        'Blue Buffalo Joint (\$55-65)',
-      ],
-      schedule: {
-        'morning': '7:30-8:30 AM (50%)',
-        'evening': '6:00-7:00 PM (50%)',
-      },
-    ),
-  ];
 }

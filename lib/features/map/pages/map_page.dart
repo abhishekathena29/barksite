@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../theme.dart';
 import '../../../widgets/app_layout.dart';
@@ -14,75 +13,122 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final _searchController = TextEditingController();
-  bool _isRequestingLocation = false;
-  String? _locationError;
-  _Location? _location;
 
   final List<_NearbyPlace> _places = [
-    _NearbyPlace('PetSmart', '0.8 mi', '123 Main St', 4.5, 'store', 25, 30),
     _NearbyPlace(
-      'Dog Park Central',
-      '0.5 mi',
-      '200 Park Ave',
+      'Friendicoes SECA',
+      '3.2 km',
+      'Jangpura B, South Delhi',
+      4.8,
+      'vet',
+      30,
+      62,
+    ),
+    _NearbyPlace(
+      'All Creatures Veterinary Hospital',
+      '8.5 km',
+      'Vasant Vihar, New Delhi',
       4.9,
-      'park',
+      'vet',
       70,
-      20,
+      40,
     ),
-    _NearbyPlace('Petco', '1.2 mi', '456 Oak Ave', 4.3, 'store', 80, 65),
     _NearbyPlace(
-      'Paws and Claws Grooming',
-      '1.5 mi',
-      '789 Pine Rd',
-      4.7,
+      'PetZone Delhi',
+      '5.1 km',
+      'Lajpat Nagar II, New Delhi',
+      4.5,
+      'store',
+      55,
+      72,
+    ),
+    _NearbyPlace(
+      'Dog Zone India',
+      '6.8 km',
+      'Saket District Centre, New Delhi',
+      4.6,
       'groomer',
-      20,
-      70,
+      62,
+      82,
     ),
-    _NearbyPlace('Happy Tails Vet', '1.8 mi', '321 Elm St', 4.8, 'vet', 65, 80),
     _NearbyPlace(
-      'Pet Supplies Plus',
-      '2.1 mi',
-      '654 Maple Dr',
+      'Pawsome Pet Shop',
+      '7.2 km',
+      'Rajouri Garden, West Delhi',
       4.4,
       'store',
+      18,
       35,
-      85,
+    ),
+    _NearbyPlace(
+      'The Dog Cafe',
+      '4.9 km',
+      'Hauz Khas Village, New Delhi',
+      4.7,
+      'cafe',
+      45,
+      55,
+    ),
+    _NearbyPlace(
+      'Deer Park Delhi',
+      '5.3 km',
+      'Hauz Khas, New Delhi',
+      4.8,
+      'park',
+      40,
+      46,
+    ),
+    _NearbyPlace(
+      'K9 Club Grooming & Boarding',
+      '6.1 km',
+      'Greater Kailash I, New Delhi',
+      4.6,
+      'groomer',
+      65,
+      66,
+    ),
+    _NearbyPlace(
+      'DogSpot Store',
+      '9.0 km',
+      'Connaught Place, New Delhi',
+      4.3,
+      'store',
+      50,
+      24,
+    ),
+    _NearbyPlace(
+      'Delhi Pet Hospital',
+      '12.5 km',
+      'Pitampura, North Delhi',
+      4.5,
+      'vet',
+      26,
+      18,
+    ),
+    _NearbyPlace(
+      'Barks & Bites Cafe',
+      '7.8 km',
+      'Shahpur Jat, New Delhi',
+      4.6,
+      'cafe',
+      58,
+      60,
+    ),
+    _NearbyPlace(
+      'Pets & Vets Clinic',
+      '4.2 km',
+      'Green Park, New Delhi',
+      4.7,
+      'vet',
+      42,
+      38,
     ),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _requestLocationPermission();
-  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _requestLocationPermission() async {
-    setState(() {
-      _isRequestingLocation = true;
-      _locationError = null;
-    });
-
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-
-    setState(() {
-      _isRequestingLocation = false;
-      _location = _Location(latitude: 37.7749, longitude: -122.4194);
-    });
-  }
-
-  Future<void> _openGoogleMaps() async {
-    final query = _location != null
-        ? 'https://www.google.com/maps/search/pet+stores+dog+parks+near+me/@${_location!.latitude},${_location!.longitude},14z'
-        : 'https://www.google.com/maps/search/pet+stores+dog+parks+near+me';
-    await launchUrl(Uri.parse(query), mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -96,7 +142,7 @@ class _MapPageState extends State<MapPage> {
     }).toList();
 
     return AppLayout(
-      title: 'Map & Nearby Spots',
+      title: 'Delhi Dog Spots',
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 120),
         child: Column(
@@ -109,7 +155,7 @@ class _MapPageState extends State<MapPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Nearby stores, parks, vets, and grooming',
+                      'Stores, cafes, vets & parks in Delhi',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -117,7 +163,7 @@ class _MapPageState extends State<MapPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'The page scrolls as a single experience now, so the map, filters, and locations stay in one flow.',
+                      'Find the best dog-friendly places in and around Delhi — from vet clinics and groomers to pet cafes and parks.',
                       style: TextStyle(color: AppTheme.mutedText, height: 1.5),
                     ),
                     const SizedBox(height: 14),
@@ -125,104 +171,81 @@ class _MapPageState extends State<MapPage> {
                       controller: _searchController,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
-                        hintText: 'Search parks, vets, or stores',
+                        hintText: 'Search cafes, vets, stores or parks',
                         prefixIcon: Icon(LucideIcons.search),
                       ),
                     ),
-                    if (_isRequestingLocation) ...[
-                      const SizedBox(height: 12),
-                      const LinearProgressIndicator(),
-                    ],
-                    if (_locationError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _locationError!,
-                        style: const TextStyle(color: AppTheme.destructive),
-                      ),
-                    ],
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 18),
-            GestureDetector(
-              onTap: _openGoogleMaps,
-              child: Card(
-                child: SizedBox(
-                  height: 310,
-                  child: Stack(
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(0xFFD9EEE5),
-                              Color(0xFFEAF1D6),
-                              Color(0xFFE8EDF7),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: CustomPaint(painter: _GridPainter()),
-                      ),
-                      Positioned.fill(
-                        child: CustomPaint(painter: _RoadPainter()),
-                      ),
-                      if (_location != null)
-                        const Positioned(
-                          left: 170,
-                          top: 138,
-                          child: _MapMarker(
-                            color: Colors.red,
-                            icon: Icons.circle,
-                          ),
-                        ),
-                      ...filtered.map(
-                        (place) => Positioned(
-                          left: place.x / 100 * 320,
-                          top: place.y / 100 * 270,
-                          child: _MapMarker(
-                            color: _placeColor(place.type),
-                            icon: _placeIcon(place.type),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 14,
-                        right: 14,
-                        bottom: 14,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.92),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(LucideIcons.externalLink, size: 16),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Tap the map to open Google Maps',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+            // Card(
+            //   child: SizedBox(
+            //     height: 310,
+            //     child: Stack(
+            //       children: [
+            //         Container(
+            //           decoration: const BoxDecoration(
+            //             gradient: LinearGradient(
+            //               colors: [
+            //                 Color(0xFFD9EEE5),
+            //                 Color(0xFFEAF1D6),
+            //                 Color(0xFFE8EDF7),
+            //               ],
+            //               begin: Alignment.topLeft,
+            //               end: Alignment.bottomRight,
+            //             ),
+            //           ),
+            //         ),
+            //         Positioned.fill(
+            //           child: CustomPaint(painter: _GridPainter()),
+            //         ),
+            //         Positioned.fill(
+            //           child: CustomPaint(painter: _RoadPainter()),
+            //         ),
+            //         ...filtered.map(
+            //           (place) => Positioned(
+            //             left: place.x / 100 * 320,
+            //             top: place.y / 100 * 270,
+            //             child: _MapMarker(
+            //               color: _placeColor(place.type),
+            //               icon: _placeIcon(place.type),
+            //             ),
+            //           ),
+            //         ),
+            //         Positioned(
+            //           left: 14,
+            //           right: 14,
+            //           bottom: 14,
+            //           child: Container(
+            //             padding: const EdgeInsets.symmetric(
+            //               horizontal: 14,
+            //               vertical: 10,
+            //             ),
+            //             decoration: BoxDecoration(
+            //               color: Colors.white.withValues(alpha: 0.92),
+            //               borderRadius: BorderRadius.circular(18),
+            //             ),
+            //             child: Row(
+            //               children: const [
+            //                 Icon(LucideIcons.mapPin, size: 16),
+            //                 SizedBox(width: 8),
+            //                 Expanded(
+            //                   child: Text(
+            //                     'Dog-friendly spots across Delhi NCR',
+            //                     style: TextStyle(fontWeight: FontWeight.w600),
+            //                   ),
+            //                 ),
+            //               ],
+            //             ),
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -231,6 +254,7 @@ class _MapPageState extends State<MapPage> {
                 _Legend(label: 'Dog Park', color: Color(0xFF22C55E)),
                 _Legend(label: 'Groomer', color: Color(0xFF8B5CF6)),
                 _Legend(label: 'Vet', color: Color(0xFFEC4899)),
+                _Legend(label: 'Dog Cafe', color: Color(0xFFF97316)),
               ],
             ),
             const SizedBox(height: 18),
@@ -288,6 +312,26 @@ class _MapPageState extends State<MapPage> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _placeColor(
+                              place.type,
+                            ).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _placeLabel(place.type),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: _placeColor(place.type),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -422,6 +466,8 @@ Color _placeColor(String type) {
       return const Color(0xFF8B5CF6);
     case 'vet':
       return const Color(0xFFEC4899);
+    case 'cafe':
+      return const Color(0xFFF97316);
     default:
       return const Color(0xFF3B82F6);
   }
@@ -430,13 +476,30 @@ Color _placeColor(String type) {
 IconData _placeIcon(String type) {
   switch (type) {
     case 'park':
-      return LucideIcons.mapPin;
+      return LucideIcons.trees;
     case 'groomer':
       return LucideIcons.scissors;
     case 'vet':
-      return LucideIcons.heart;
+      return LucideIcons.stethoscope;
+    case 'cafe':
+      return LucideIcons.coffee;
     default:
-      return LucideIcons.mapPin;
+      return LucideIcons.shoppingBag;
+  }
+}
+
+String _placeLabel(String type) {
+  switch (type) {
+    case 'park':
+      return 'Dog Park';
+    case 'groomer':
+      return 'Groomer';
+    case 'vet':
+      return 'Veterinary';
+    case 'cafe':
+      return 'Dog Cafe';
+    default:
+      return 'Pet Store';
   }
 }
 
@@ -458,11 +521,4 @@ class _NearbyPlace {
   final String type;
   final double x;
   final double y;
-}
-
-class _Location {
-  const _Location({required this.latitude, required this.longitude});
-
-  final double latitude;
-  final double longitude;
 }

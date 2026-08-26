@@ -56,7 +56,6 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _loading = false);
 
     if (success) {
-      _showSnack('Account created');
       Navigator.pushNamedAndRemoveUntil(context, '/profile', (route) => false);
     } else {
       _showSnack(authProvider.error ?? 'Signup failed', isError: true);

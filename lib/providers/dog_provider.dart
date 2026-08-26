@@ -81,7 +81,9 @@ class DogProvider extends ChangeNotifier {
         .listen(
           (snapshot) {
             _dogs = snapshot.docs
-                .map((doc) => DogProfile.fromJson(doc.data()))
+                .map(
+                  (doc) => DogProfile.fromJson({...doc.data(), 'id': doc.id}),
+                )
                 .toList();
             _loading = false;
             _syncSelectedDog(

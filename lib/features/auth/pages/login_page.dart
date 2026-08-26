@@ -42,7 +42,6 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = false);
 
     if (success) {
-      _showSnack('Welcome back');
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } else {
       _showSnack(authProvider.error ?? 'Login failed', isError: true);

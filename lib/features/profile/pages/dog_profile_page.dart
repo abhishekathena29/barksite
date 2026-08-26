@@ -79,7 +79,7 @@ class _DogProfilePageState extends State<DogProfilePage> {
       lastDate: now,
       initialDate: initial,
     );
-    if (result == null) return;
+    if (!mounted || result == null) return;
     _birthdayController.text = result.toIso8601String().split('T').first;
     setState(() {});
   }
@@ -120,21 +120,14 @@ class _DogProfilePageState extends State<DogProfilePage> {
     if (!mounted) return;
     setState(() => _saving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? (_editingDog == null
-                    ? '${dog.name} profile created'
-                    : '${dog.name} profile updated')
-              : (provider.error ?? 'Unable to save dog profile'),
-        ),
-      ),
-    );
-
     if (success) {
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(provider.error ?? 'Unable to save dog profile')),
+    );
   }
 
   @override

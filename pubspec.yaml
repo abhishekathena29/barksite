@@ -42,6 +42,7 @@ dependencies:
   firebase_auth: 
   cloud_firestore: 
   provider:
+  google_generative_ai:
 
 
 dev_dependencies:
